@@ -2,12 +2,12 @@
 #
 # EOF (end-of-file) token is used to indicate that there is no more input left
 # Lexical analysis
-INTEGER, PLUS, EOF = "INTEGER", "PLUS", "EOF"
+INTEGER, OPERAND, EOF = "INTEGER", "OPERAND", "EOF"
 
 
 class Token(object):
     def __init__(self, type, value):
-        # token type: INTEGER, PLUS, or EOF
+        # token type: INTEGER, OPERAND, or EOF
         self.type = type
         # token value : [1-9] | + | None
         self.value = value
@@ -17,7 +17,7 @@ class Token(object):
 
         Examples:
             Token(INTEGER, 3)
-            Token(PLUS '+')
+            Token(OPERAND, '+')
         """
         return "Token({type}, {value})".format(type=self.type, value=repr(self.value))
 
@@ -26,6 +26,8 @@ class Token(object):
 
 
 class Interpreter(object):
+    operands = {"+", "-", "*", "/"}
+
     def __init__(self, text):
         # The input program/calculation provided by the user
         self.text = text
@@ -44,6 +46,10 @@ class Interpreter(object):
             self.pos += 1
         return int(text[start : self.pos])
 
+    @classmethod
+    def is_operand(cls, current_char):
+        return current_char in cls.operands
+
     def get_next_token(self):
         """Lexical analyzer (also known as scanner or tokenizer).
 
@@ -53,7 +59,7 @@ class Interpreter(object):
         text = self.text
 
         # Skip spaces and tabs
-        while text[self.pos].isspace():
+        while self.pos < len(text) and text[self.pos].isspace():
             self.pos += 1
 
         # Is `self.pos` index past the end of the `self.text`?
@@ -66,9 +72,9 @@ class Interpreter(object):
         if current_char.isdigit():
             return Token(INTEGER, self.get_integer())
 
-        if current_char == "+":
+        if Interpreter.is_operand(current_char):
             self.pos += 1
-            return Token(PLUS, current_char)
+            return Token(OPERAND, current_char)
 
         self.error(f"Parsing failed, unknown symbol {current_char!r}")
 
@@ -79,14 +85,24 @@ class Interpreter(object):
             self.error(f"Sytax Error: expected integer got {left_operand!r}")
 
         operand = self.get_next_token()
-        if operand.type != PLUS:
-            self.error(f"Sytax Error: expected '+' got {operand!r}")
+        if operand.type != OPERAND:
+            self.error(f"Sytax Error: expected operand got {operand!r}")
 
         right_operand = self.get_next_token()
         if right_operand.type != INTEGER:
             self.error(f"Sytax Error: expected integer got {right_operand!r}")
 
-        return left_operand.value + right_operand.value
+        if operand.value == "+":
+            return left_operand.value + right_operand.value
+
+        if operand.value == "-":
+            return left_operand.value - right_operand.value
+
+        if operand.value == "*":
+            return left_operand.value * right_operand.value
+
+        if operand.value == "/":
+            return left_operand.value / right_operand.value
 
 
 def main():
