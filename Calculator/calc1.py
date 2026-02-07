@@ -1,13 +1,15 @@
+import operator
+
 # Token types
 #
 # EOF (end-of-file) token is used to indicate that there is no more input left
 # Lexical analysis
-INTEGER, OPERAND, EOF = "INTEGER", "OPERAND", "EOF"
+INTEGER, OPERATOR, EOF = "INTEGER", "OPERATOR", "EOF"
 
 
 class Token(object):
     def __init__(self, type, value):
-        # token type: INTEGER, OPERAND, or EOF
+        # token type: INTEGER, OPERATOR, or EOF
         self.type = type
         # token value : [1-9] | + | None
         self.value = value
@@ -17,27 +19,29 @@ class Token(object):
 
         Examples:
             Token(INTEGER, 3)
-            Token(OPERAND, '+')
+            Token(OPERATOR, '+')
         """
         return "Token({type}, {value})".format(type=self.type, value=repr(self.value))
 
-    def __repr__(self):
-        return self.__str__()
+    __repr__ = __str__
 
 
 class Interpreter(object):
-    operands = {"+", "-", "*", "/"}
+    operators = {
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.truediv,
+    }
 
     def __init__(self, text):
         # The input program/calculation provided by the user
         self.text = text
         # Index into the program/calculation
         self.pos = 0
-        # Current token instance
-        self.current_token = None
 
-    def error(self, str):
-        raise Exception(str)
+    def error(self, err_str):
+        raise Exception(err_str)
 
     def get_integer(self):
         text = self.text
@@ -45,10 +49,6 @@ class Interpreter(object):
         while self.pos < len(text) and text[self.pos].isdigit():
             self.pos += 1
         return int(text[start : self.pos])
-
-    @classmethod
-    def is_operand(cls, current_char):
-        return current_char in cls.operands
 
     def get_next_token(self):
         """Lexical analyzer (also known as scanner or tokenizer).
@@ -72,9 +72,10 @@ class Interpreter(object):
         if current_char.isdigit():
             return Token(INTEGER, self.get_integer())
 
-        if Interpreter.is_operand(current_char):
+        op = Interpreter.operators.get(current_char)
+        if not op is None:
             self.pos += 1
-            return Token(OPERAND, current_char)
+            return Token(OPERATOR, op)
 
         self.error(f"Parsing failed, unknown symbol {current_char!r}")
 
@@ -84,25 +85,15 @@ class Interpreter(object):
         if left_operand.type != INTEGER:
             self.error(f"Sytax Error: expected integer got {left_operand!r}")
 
-        operand = self.get_next_token()
-        if operand.type != OPERAND:
-            self.error(f"Sytax Error: expected operand got {operand!r}")
+        op = self.get_next_token()
+        if op.type != OPERATOR:
+            self.error(f"Sytax Error: expected operand got {op!r}")
 
         right_operand = self.get_next_token()
         if right_operand.type != INTEGER:
             self.error(f"Sytax Error: expected integer got {right_operand!r}")
 
-        if operand.value == "+":
-            return left_operand.value + right_operand.value
-
-        if operand.value == "-":
-            return left_operand.value - right_operand.value
-
-        if operand.value == "*":
-            return left_operand.value * right_operand.value
-
-        if operand.value == "/":
-            return left_operand.value / right_operand.value
+        return op.value(left_operand.value, right_operand.value)
 
 
 def main():
