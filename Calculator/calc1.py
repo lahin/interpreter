@@ -52,6 +52,10 @@ class Interpreter(object):
         """
         text = self.text
 
+        # Skip spaces and tabs
+        while text[self.pos].isspace():
+            self.pos += 1
+
         # Is `self.pos` index past the end of the `self.text`?
         # If so, then retrun `EOF` token because there is no more calculation/program left.
         if self.pos >= len(text):
