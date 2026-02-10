@@ -1,4 +1,5 @@
 import operator
+from typing import NoReturn
 
 # Token types
 #
@@ -41,7 +42,7 @@ class Lexer(object):
         self.pos = 0
 
     @staticmethod
-    def error(err_str):
+    def error(err_str) -> NoReturn:
         raise Exception(err_str)
 
     @staticmethod
@@ -60,13 +61,12 @@ class Lexer(object):
             pos += 1
         return pos
 
-    def get_next_token(self):
+    def get_next_token(self) -> Token:
         """Lexical analyzer (also known as scanner or tokenizer).
         This method is responsible for breaking a sentence apart into tokens.
         One token at a time.
         """
         self.pos = Lexer.skip_whitespaces(self.text, self.pos)
-
         text = self.text
 
         # Is `self.pos` index past the end of the `self.text`?
@@ -92,7 +92,8 @@ class Interpreter(object):
     def __init__(self, text):
         self.lexer = Lexer(text)
 
-    def error(self, err_str):
+    @staticmethod
+    def error(err_str) -> NoReturn:
         raise Exception(err_str)
 
     def expr(self):
