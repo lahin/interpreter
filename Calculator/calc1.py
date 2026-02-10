@@ -21,7 +21,7 @@ class Token(object):
             Token(INTEGER, 3)
             Token(OPERATOR, '+')
         """
-        return "Token({type}, {value})".format(type=self.type, value=repr(self.value))
+        return f"Token({self.type!r}, {self.value!r})"
 
     __repr__ = __str__
 
